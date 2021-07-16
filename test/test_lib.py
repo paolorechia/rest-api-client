@@ -55,8 +55,7 @@ class JokeModel(BaseModel):
     value: str
 
 
-def test_rest_api():
-
+def test_get_rest_api():
     endpoints = [
         Endpoint(
             name="get_joke",
@@ -96,3 +95,29 @@ def test_rest_api():
     assert api.get_categories() == categories
 
     api.get_search(query="something")
+
+
+def test_post_rest_api_with_path_parameters():
+
+    create_basket_endpoint = Endpoint(
+        name="create_basket",
+        path="/pantry/{pantry_id}/basket/{basket_id}",
+        method=HTTPMethod.POST,
+    )
+    client = MagicMock()
+    api = RestAPI(
+        api_url="https://getpantry.cloud/apiv1",
+        driver=client,
+        endpoints=[create_basket_endpoint],
+    )
+    api.create_basket(pantry_id="123", basket_id="234")
+
+
+def test_get_path_parameter():
+    api = RestAPI("https://getpantry.cloud/apiv1", MagicMock())
+    params: Dict[str, type] = api.get_path_parameters(
+        "/pantry/{pantry_id}/basket/{basket_id}"
+    )
+
+    assert params[0] == "pantry_id"
+    assert params[1] == "basket_id"
