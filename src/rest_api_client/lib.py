@@ -1,5 +1,6 @@
 import logging
-from typing import Iterable, Dict, Optional
+import re
+from typing import Iterable, Dict, Optional, List
 from makefun import create_function
 from pydantic import BaseModel, HttpUrl
 from enum import Enum
@@ -35,6 +36,7 @@ class Endpoint(BaseModel):
     method: Optional[HTTPMethod]
     model: Optional[type]
     query_parameters: Optional[Dict[str, type]]
+    path_parameters: Optional[List[str]] = None
 
 
 class EndpointNotFound(Exception):
@@ -60,13 +62,20 @@ Pass it as an argument or declare it in the format:
 
 
 class RestAPI:
-    def __init__(self, api_url: str, driver: HttpDriver):
+    def __init__(
+        self,
+        api_url: str,
+        driver: HttpDriver,
+        endpoints: Optional[Iterable[Endpoint]] = None,
+    ):
         self.api_url = Url(full_string=api_url)
         self.driver = driver
-        self.endpoints: Dict[str, Endpoint] = {}
         self._headers = {
             "Accept": JSON_MIMETYPE,
         }
+        self.endpoints: Dict[str, Endpoint] = {}
+        if endpoints:
+            self.register_endpoints(endpoints)
 
     def register_endpoints(self, endpoints: Iterable[Endpoint]):
         for endpoint in endpoints:
@@ -85,6 +94,10 @@ class RestAPI:
 
                 # Inferred type from endpoint name.
                 endpoint.method = HTTPMethod(method)
+
+            # Check for path parameters
+            endpoint.path_parameters = self.get_path_parameters(endpoint.path)
+
             self.endpoints[endpoint.name] = endpoint
             self._create_sync_method(endpoint)
 
@@ -104,33 +117,49 @@ class RestAPI:
         method = endpoint.method.value
         driver_function = getattr(self.driver, method)
         url = f"{str(self.api_url.full_string)}{endpoint.path}"
-        driver_kwargs = {"url": url}
+        driver_kwargs = {}
         headers = self._headers.copy()
         if data:
-            driver_kwargs["json"] = data.json()
+            driver_kwargs["json"] = data
             headers["Content-Type"] = JSON_MIMETYPE
 
         if endpoint.query_parameters:
             parameters = []
             for key, item in kwargs.items():
-                if item:
+                if item and key in endpoint.query_parameters:
                     parameters.append(f"{key}={item}")
             query = "?" + "&".join(parameters)
 
-            driver_kwargs["url"] = url + query
+            url += query
 
+
+        if endpoint.path_parameters:
+            path_kwargs = {}
+            for key, item in kwargs.items():
+                if key in endpoint.path_parameters:
+                    path_kwargs[key] = item
+            url = url.format(**path_kwargs)
+
+        driver_kwargs["url"] = url
+        logger.debug(driver_kwargs)
         response = driver_function(**driver_kwargs)
         response.raise_for_status()
-        json_response = response.json()
-        if endpoint.model:
-            return endpoint.model(**json_response)
-        return json_response
+        try:
+            json_response = response.json()
+            if endpoint.model:
+                return endpoint.model(**json_response)
+            return json_response
+        except Exception:
+            return response.text
 
     def _create_sync_method(self, endpoint: Endpoint):
         parameters = []
-
         if endpoint.method in [HTTPMethod.POST, HTTPMethod.PUT, HTTPMethod.PATCH]:
             parameters.append("data: BaseModel = None")
+
+        if endpoint.path_parameters:
+            for p in endpoint.path_parameters:
+                parameters.append(f"{p}: str = None")
 
         if endpoint.query_parameters:
             for p_name, p_type in endpoint.query_parameters.items():
@@ -149,3 +178,12 @@ class RestAPI:
         dynamic_function = create_function(func_sig, func_impl)
 
         setattr(self, endpoint.name, dynamic_function)  # noqa
+
+    def get_path_parameters(self, path: str) -> Optional[List[str]]:
+        _query_parameters: List[str] = []
+        params = re.findall(r"({[a-z_]+})", path)
+        if not params:
+            return None
+        for param in params:
+            _query_parameters.append(re.sub("{|}", "", str(param)))
+        return _query_parameters
