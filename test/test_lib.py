@@ -1,6 +1,7 @@
+import pytest
 from unittest.mock import MagicMock
 from pydantic import BaseModel, HttpUrl
-from rest_api_client.lib import RestAPI, Endpoint, HTTPMethod
+from rest_api_client.lib import RestAPI, Endpoint, HTTPMethod, MissingMethodName
 import httpx
 
 CHUCK_BASE_URL = "https://api.chucknorris.io/jokes"
@@ -98,7 +99,42 @@ def test_get_rest_api():
 
 
 def test_pantry_api():
+    client = MagicMock()
+    api = RestAPI(
+        api_url="https://getpantry.cloud/apiv1",
+        driver=client,
+        endpoints=[
+            Endpoint(name="get_pantry", path="/pantry/{pantry_id}"),
+            Endpoint(
+                name="get_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+                method=HTTPMethod.GET,
+            ),
+            Endpoint(
+                name="create_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+                method=HTTPMethod.POST,
+            ),
+            Endpoint(
+                name="update_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+                method=HTTPMethod.PUT,
+            ),
+            Endpoint(
+                name="delete_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+                method=HTTPMethod.DELETE,
+            ),
+        ],
+    )
+    api.get_pantry(pantry_id="123")
+    api.create_basket(pantry_id="123", basket_id="234", data={"key": "value"})
+    api.update_basket(pantry_id="123", basket_id="234", data={"key2": "value2"})
+    api.get_basket(pantry_id="123", basket_id="234")
+    api.delete_basket(pantry_id="123", basket_id="234")
 
+
+def test_pantry_api_with_aliases():
     client = MagicMock()
     api = RestAPI(
         api_url="https://getpantry.cloud/apiv1",
@@ -112,12 +148,10 @@ def test_pantry_api():
             Endpoint(
                 name="create_basket",
                 path="/pantry/{pantry_id}/basket/{basket_id}",
-                method=HTTPMethod.POST,
             ),
             Endpoint(
                 name="update_basket",
                 path="/pantry/{pantry_id}/basket/{basket_id}",
-                method=HTTPMethod.PUT,
             ),
             Endpoint(
                 name="delete_basket", path="/pantry/{pantry_id}/basket/{basket_id}"
@@ -139,3 +173,12 @@ def test_get_path_parameter():
 
     assert params[0] == "pantry_id"
     assert params[1] == "basket_id"
+
+
+def test_missing_method_name():
+    with pytest.raises(MissingMethodName):
+        api = RestAPI(
+            "https://getpantry.cloud/apiv1",
+            MagicMock(),
+            endpoints=[Endpoint(name="wrong_pantry", path="/pantry/{pantry_id}")],
+        )

@@ -62,9 +62,7 @@ class TestPantry(unittest.TestCase):
         self.api.update_basket(
             pantry_id=self.pantry_id, basket_id="update_bucket", data=update_bucket
         )
-        b2 = self.api.get_basket(
-            pantry_id=self.pantry_id, basket_id="update_bucket"
-        )
+        b2 = self.api.get_basket(pantry_id=self.pantry_id, basket_id="update_bucket")
         assert b2 == update_bucket
 
     def test_delete_bucket(self):

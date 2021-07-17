@@ -12,6 +12,7 @@ logger.setLevel(logging.ERROR)
 
 JSON_MIMETYPE = "application/json"
 SUPPORTED_METHODS = {"get", "post", "put", "patch", "delete"}
+ALIASES = {"create": "post", "update": "put"}
 
 
 class HttpDriver:
@@ -86,6 +87,9 @@ class RestAPI:
                     missing_method = True
 
                 method = sections[0]
+                if method in ALIASES:
+                    method = ALIASES[method]
+
                 if method not in SUPPORTED_METHODS:
                     missing_method = True
 
