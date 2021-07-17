@@ -2,10 +2,10 @@
 Work in progress. Aims at glueing pydantic and httpx with a simple REST API client, with dynamic generated methods.
 Ideally, it could be support both synchronous and asynchronous formats.
 
-Currently it is only supporting GET Methods, since it's a work in progress.
+Currently it is only supporting GET, POST, PUT Methods, since it's a work in progress.
 Roadmap:
 
-- Support POST, PUT, PATCH, DELETE
+- PATCH, DELETE
 - Adds Authentication support
 - Adds Async invokation support
 - Export generated source code
@@ -73,4 +73,24 @@ with httpx.Client() as client:
     print(joke)
     print(joke2)
     print(search)
+```
+
+Another example for pastry (see integration tests).
+```
+        self.api = RestAPI(
+            api_url="https://getpantry.cloud/apiv1",
+            driver=self.client,
+            endpoints=[
+                Endpoint(
+                    name="create_basket",
+                    path="/pantry/{pantry_id}/basket/{basket_id}",
+                    method=HTTPMethod.POST,
+                )
+            ],
+        )
+
+    def test_pantry(self):
+        self.api.create_basket(pantry_id=self.pantry_id, basket_id="test_bucket", data={
+            "Test": "Hello world!"
+        })
 ```
