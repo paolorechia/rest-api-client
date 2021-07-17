@@ -1,11 +1,9 @@
-# Python Rest API Client (WIP)
+# Python Rest API Client (v0.0.4)
 Work in progress. Aims at glueing pydantic and httpx with a simple REST API client, with dynamic generated methods.
 Ideally, it could be support both synchronous and asynchronous formats.
 
-Currently it is only supporting GET, POST, PUT Methods, since it's a work in progress.
 Roadmap:
 
-- PATCH, DELETE
 - Adds Authentication support
 - Adds Async invokation support
 - Export generated source code
@@ -76,21 +74,51 @@ with httpx.Client() as client:
 ```
 
 Another example for pastry (see integration tests).
-```
-        self.api = RestAPI(
-            api_url="https://getpantry.cloud/apiv1",
-            driver=self.client,
-            endpoints=[
-                Endpoint(
-                    name="create_basket",
-                    path="/pantry/{pantry_id}/basket/{basket_id}",
-                    method=HTTPMethod.POST,
-                )
-            ],
-        )
+```python
 
-    def test_pantry(self):
-        self.api.create_basket(pantry_id=self.pantry_id, basket_id="test_bucket", data={
-            "Test": "Hello world!"
-        })
+api = RestAPI(
+    api_url="https://getpantry.cloud/apiv1",
+    driver=client,
+    # One can also pass endpoints to the constructor
+    endpoints=[
+        Endpoint(name="get_pantry", path="/pantry/{pantry_id}"),
+        Endpoint(
+            name="get_basket",
+            # Path parameters can be provided in the format {variable_name}
+            path="/pantry/{pantry_id}/basket/{basket_id}",
+        ),
+        Endpoint(
+            # 'create_' is interpreted as POST
+            name="create_basket",
+            path="/pantry/{pantry_id}/basket/{basket_id}",
+        ),
+        Endpoint(
+            # 'update_' is interpreted as PUT
+            name="update_basket",
+            path="/pantry/{pantry_id}/basket/{basket_id}",
+        ),
+        Endpoint(
+            name="delete_basket",
+            path="/pantry/{pantry_id}/basket/{basket_id}",
+        ),
+    ],
+)
+pantries = api.get_pantry(pantry_id="123")
+
+# Create/update/patch methods have an additional parameter called data
+# Which is passed as the BODY of the request
+api.create_basket(pantry_id="123", basket_id="234", data={"key": "value"})
+api.update_basket(pantry_id="123", basket_id="234", data={"key2": "value2"})
+
+basket = api.get_basket(pantry_id="123", basket_id="234")
+api.delete_basket(pantry_id="123", basket_id="234")
+```
+
+If pantry supported PATCH, we would declare the endpoint as:
+
+```python
+Endpoint(
+    name="patch_basket",  # No alias for patch exists
+    path="/pantry/{pantry_id}/basket/{basket_id}",
+),
 ```
