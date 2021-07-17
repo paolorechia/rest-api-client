@@ -132,7 +132,6 @@ class RestAPI:
 
             url += query
 
-
         if endpoint.path_parameters:
             path_kwargs = {}
             for key, item in kwargs.items():
@@ -140,7 +139,7 @@ class RestAPI:
                     path_kwargs[key] = item
             url = url.format(**path_kwargs)
 
-        driver_kwargs["url"] = url
+        driver_kwargs["url"] = url  # type: ignore
         logger.debug(driver_kwargs)
         response = driver_function(**driver_kwargs)
         response.raise_for_status()

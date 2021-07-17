@@ -97,20 +97,38 @@ def test_get_rest_api():
     api.get_search(query="something")
 
 
-def test_post_rest_api_with_path_parameters():
+def test_pantry_api():
 
-    create_basket_endpoint = Endpoint(
-        name="create_basket",
-        path="/pantry/{pantry_id}/basket/{basket_id}",
-        method=HTTPMethod.POST,
-    )
     client = MagicMock()
     api = RestAPI(
         api_url="https://getpantry.cloud/apiv1",
         driver=client,
-        endpoints=[create_basket_endpoint],
+        endpoints=[
+            Endpoint(name="get_pantry", path="/pantry/{pantry_id}"),
+            Endpoint(
+                name="get_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+            ),
+            Endpoint(
+                name="create_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+                method=HTTPMethod.POST,
+            ),
+            Endpoint(
+                name="update_basket",
+                path="/pantry/{pantry_id}/basket/{basket_id}",
+                method=HTTPMethod.PUT,
+            ),
+            Endpoint(
+                name="delete_basket", path="/pantry/{pantry_id}/basket/{basket_id}"
+            ),
+        ],
     )
-    api.create_basket(pantry_id="123", basket_id="234")
+    api.get_pantry(pantry_id="123")
+    api.create_basket(pantry_id="123", basket_id="234", data={"key": "value"})
+    api.update_basket(pantry_id="123", basket_id="234", data={"key2": "value2"})
+    api.get_basket(pantry_id="123", basket_id="234")
+    api.delete_basket(pantry_id="123", basket_id="234")
 
 
 def test_get_path_parameter():
