@@ -1,6 +1,7 @@
 # Python Rest API Client
 
 ![pypi](https://img.shields.io/pypi/v/py-rest-api-client)
+![coverage](https://github.com/paolorechia/rest-api-client/blob/master/coverage.svg?raw=true)
 
 -----
 
