@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 from unittest import IsolatedAsyncioTestCase
 from pydantic import BaseModel, HttpUrl
-from rest_api_client.lib import RestAPI, Endpoint, HTTPMethod, MissingMethodName
+from src.rest_api_client.lib import RestAPI, Endpoint, HTTPMethod, MissingMethodName
 import httpx
 
 CHUCK_BASE_URL = "https://api.chucknorris.io/jokes"

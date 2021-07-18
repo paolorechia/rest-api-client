@@ -3,6 +3,7 @@ import httpx
 import unittest
 import re
 
+
 def pantry_setup(self):
     with open("/Users/paolo/.pyrest-pantry-id", "r") as fp:
         self.pantry_id = fp.read()
@@ -79,6 +80,7 @@ class TestPantry(unittest.TestCase):
     def tearDown(self):
         self.client.close()
 
+
 class TestAsyncPantry(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         pantry_setup(self)
@@ -95,7 +97,9 @@ class TestAsyncPantry(unittest.IsolatedAsyncioTestCase):
         await self.api.async_create_basket(
             pantry_id=self.pantry_id, basket_id="get_bucket", data=get_bucket
         )
-        b2 = await self.api.async_get_basket(pantry_id=self.pantry_id, basket_id="get_bucket")
+        b2 = await self.api.async_get_basket(
+            pantry_id=self.pantry_id, basket_id="get_bucket"
+        )
         assert get_bucket == b2
 
     async def test_update_bucket(self):
@@ -107,7 +111,9 @@ class TestAsyncPantry(unittest.IsolatedAsyncioTestCase):
         await self.api.async_update_basket(
             pantry_id=self.pantry_id, basket_id="update_bucket", data=update_bucket
         )
-        b2 = await self.api.async_get_basket(pantry_id=self.pantry_id, basket_id="update_bucket")
+        b2 = await self.api.async_get_basket(
+            pantry_id=self.pantry_id, basket_id="update_bucket"
+        )
         assert b2 == update_bucket
 
     async def test_delete_bucket(self):
@@ -116,11 +122,12 @@ class TestAsyncPantry(unittest.IsolatedAsyncioTestCase):
             basket_id="delete_bucket",
             data={"Test Delete": "OK!"},
         )
-        await self.api.async_delete_basket(pantry_id=self.pantry_id, basket_id="delete_bucket")
+        await self.api.async_delete_basket(
+            pantry_id=self.pantry_id, basket_id="delete_bucket"
+        )
 
     def tearDown(self):
         self.client.close()
-
 
 
 if __name__ == "__main__":
