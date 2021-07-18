@@ -103,7 +103,7 @@ class RestAPI:
             endpoint.path_parameters = self.get_path_parameters(endpoint.path)
 
             self.endpoints[endpoint.name] = endpoint
-            self._create_sync_method(endpoint)
+            self._create_methods(endpoint)
 
     def call_endpoint(self, name, *args, data: Optional[BaseModel] = None, **kwargs):
         endpoint = self.endpoints.get(name)
@@ -155,7 +155,7 @@ class RestAPI:
         except Exception:
             return response.text
 
-    def _create_sync_method(self, endpoint: Endpoint):
+    def _create_methods(self, endpoint: Endpoint):
         parameters = []
         if endpoint.method in [HTTPMethod.POST, HTTPMethod.PUT, HTTPMethod.PATCH]:
             parameters.append("data: BaseModel = None")
@@ -178,9 +178,16 @@ class RestAPI:
             return self.call_endpoint(name=endpoint.name, **kwargs)
             return args, kwargs
 
-        dynamic_function = create_function(func_sig, func_impl)
+        async def async_func_impl(*args, **kwargs):
+            """This docstring will be used in the generated function by default"""
+            return self.call_endpoint(name=endpoint.name, **kwargs)
+            return args, kwargs
 
-        setattr(self, endpoint.name, dynamic_function)  # noqa
+        dynamic_sync_function = create_function(func_sig, func_impl)
+        dynamic_async_function = create_function(func_sig, async_func_impl)
+
+        setattr(self, endpoint.name, dynamic_sync_function)  # noqa
+        setattr(self, "async_" + endpoint.name, dynamic_async_function)  # noqa
 
     def get_path_parameters(self, path: str) -> Optional[List[str]]:
         _query_parameters: List[str] = []
