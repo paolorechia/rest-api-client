@@ -10,11 +10,9 @@ def pantry_setup(self):
         self.pantry_id = re.sub("\n", "", self.pantry_id)
         print(self.pantry_id)
 
-    self.client = httpx.Client()
-
     self.api = RestAPI(
         api_url="https://getpantry.cloud/apiv1",
-        driver=self.client,
+        driver=None,
         endpoints=[
             Endpoint(name="get_pantry", path="/pantry/{pantry_id}"),
             Endpoint(
@@ -41,6 +39,8 @@ def pantry_setup(self):
 class TestPantry(unittest.TestCase):
     def setUp(self):
         pantry_setup(self)
+        self.client = httpx.Client()
+        self.api.driver = self.client
 
     def test_create_bucket(self):
         self.api.create_basket(
@@ -82,8 +82,10 @@ class TestPantry(unittest.TestCase):
 
 
 class TestAsyncPantry(unittest.IsolatedAsyncioTestCase):
-    def setUp(self):
+    async def asyncSetUp(self):
         pantry_setup(self)
+        self.client = httpx.AsyncClient()
+        self.api.driver = self.client
 
     async def test_create_bucket(self):
         await self.api.async_create_basket(
@@ -126,8 +128,8 @@ class TestAsyncPantry(unittest.IsolatedAsyncioTestCase):
             pantry_id=self.pantry_id, basket_id="delete_bucket"
         )
 
-    def tearDown(self):
-        self.client.close()
+    async def asyncTearDown(self):
+        await self.client.aclose()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 import logging
 import re
-from typing import Iterable, Dict, Optional, List
+from dataclasses import dataclass
+from typing import Iterable, Dict, Optional, List, Callable
 from makefun import create_function
 from pydantic import BaseModel, HttpUrl
 from enum import Enum
@@ -13,6 +14,18 @@ logger.setLevel(logging.ERROR)
 JSON_MIMETYPE = "application/json"
 SUPPORTED_METHODS = {"get", "post", "put", "patch", "delete"}
 ALIASES = {"create": "post", "update": "put"}
+
+
+@dataclass
+class PreparedCall:
+    driver_function: Callable
+    driver_kwargs: dict
+    model: Optional[type]
+
+
+class ExecutionMode(Enum):
+    SYNC = "SYNC"
+    ASYNC = "ASYNC"
 
 
 class HttpDriver:
@@ -105,16 +118,34 @@ class RestAPI:
             self.endpoints[endpoint.name] = endpoint
             self._create_methods(endpoint)
 
-    def call_endpoint(self, name, *args, data: Optional[BaseModel] = None, **kwargs):
+    def call_endpoint(
+        self, endpoint_name, *args, data: Optional[BaseModel] = None, **kwargs
+    ):
+        call: PreparedCall = self._prepare_call(
+            endpoint_name, data, **kwargs, mode=ExecutionMode.SYNC
+        )
+        return self._call_sync_endpoint(call)
+
+    async def call_async_endpoint(
+        self, endpoint_name, *args, data: Optional[BaseModel] = None, **kwargs
+    ):
+        call: PreparedCall = self._prepare_call(
+            endpoint_name, data, **kwargs, mode=ExecutionMode.ASYNC
+        )
+        return await self._call_async_endpoint(call)
+
+    def _prepare_call(
+        self,
+        name: str,
+        data: Optional[BaseModel] = None,
+        mode=ExecutionMode.SYNC,
+        **kwargs,
+    ) -> PreparedCall:
+
         endpoint = self.endpoints.get(name)
         if not endpoint:
             raise EndpointNotFound(f"Endpoint {name} not found!")
 
-        return self._sync_call_endpoint(endpoint, data, **kwargs)
-
-    def _sync_call_endpoint(
-        self, endpoint: Endpoint, data: Optional[BaseModel] = None, **kwargs
-    ):
         if not endpoint.method:
             raise MissingMethodName(endpoint_name=endpoint.name)
 
@@ -145,12 +176,22 @@ class RestAPI:
 
         driver_kwargs["url"] = url  # type: ignore
         logger.debug(driver_kwargs)
-        response = driver_function(**driver_kwargs)
+        return PreparedCall(driver_function, driver_kwargs, endpoint.model)
+
+    def _call_sync_endpoint(self, call: PreparedCall):
+        response = call.driver_function(**call.driver_kwargs)
+        return self._process_endpoint_response(call, response)
+
+    async def _call_async_endpoint(self, call: PreparedCall):
+        response = await call.driver_function(**call.driver_kwargs)
+        return self._process_endpoint_response(call, response)
+
+    def _process_endpoint_response(self, call: PreparedCall, response):
         response.raise_for_status()
         try:
             json_response = response.json()
-            if endpoint.model:
-                return endpoint.model(**json_response)
+            if call.model:
+                return call.model(**json_response)
             return json_response
         except Exception:
             return response.text
@@ -174,14 +215,12 @@ class RestAPI:
         func_sig = f"{endpoint.name}({parameters_string})"
 
         def func_impl(*args, **kwargs):
-            """This docstring will be used in the generated function by default"""
-            return self.call_endpoint(name=endpoint.name, **kwargs)
-            return args, kwargs
+            """Synchronous endpoint call."""
+            return self.call_endpoint(endpoint_name=endpoint.name, **kwargs)
 
         async def async_func_impl(*args, **kwargs):
-            """This docstring will be used in the generated function by default"""
-            return self.call_endpoint(name=endpoint.name, **kwargs)
-            return args, kwargs
+            """Asynchronous endpoint call."""
+            return await self.call_async_endpoint(endpoint_name=endpoint.name, **kwargs)
 
         dynamic_sync_function = create_function(func_sig, func_impl)
         dynamic_async_function = create_function(func_sig, async_func_impl)

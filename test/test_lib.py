@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 from unittest import IsolatedAsyncioTestCase
 from pydantic import BaseModel, HttpUrl
 from src.rest_api_client.lib import RestAPI, Endpoint, HTTPMethod, MissingMethodName
@@ -140,18 +140,40 @@ def test_pantry_api():
     api.delete_basket(pantry_id="123", basket_id="234")
 
 
-class TestAsyncMethods(IsolatedAsyncioTestCase):
-    async def test_async(self):
-        api = make_pantry_api()
-        await api.async_get_pantry(pantry_id="123")
-        await api.async_create_basket(
-            pantry_id="123", basket_id="234", data={"key": "value"}
-        )
-        await api.async_update_basket(
-            pantry_id="123", basket_id="234", data={"key2": "value2"}
-        )
-        await api.async_get_basket(pantry_id="123", basket_id="234")
-        await api.async_delete_basket(pantry_id="123", basket_id="234")
+@pytest.mark.asyncio
+async def test_async():
+    api = make_pantry_api()
+    api.driver = MagicMock()
+    json_mock = MagicMock()
+
+    api.driver.get = AsyncMock()
+    json_mock.json.return_value = "GET"
+    api.driver.get.side_effect = json_mock
+
+    api.driver.post = AsyncMock()
+    json_mock.json.return_value = "POST"
+    api.driver.post.side_effect = json_mock
+
+    api.driver.put = AsyncMock()
+    json_mock.json.return_value = "PUT"
+    api.driver.put.side_effect = json_mock
+
+    api.driver.delete = AsyncMock()
+    json_mock.json.return_value = "DELETE"
+    api.driver.delete.side_effect = json_mock
+
+    await api.async_get_pantry(pantry_id="123") == "GET"
+
+    await api.async_create_basket(
+        pantry_id="123", basket_id="234", data={"key": "value"}
+    ) == "CREATE"
+    await api.async_update_basket(
+        pantry_id="123", basket_id="234", data={"key2": "value2"}
+    ) == "UPDATE"
+
+    await api.async_get_basket(pantry_id="123", basket_id="234") == "GET"
+
+    await api.async_delete_basket(pantry_id="123", basket_id="234") == "DELETE"
 
 
 def test_pantry_api_with_aliases():
