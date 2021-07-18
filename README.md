@@ -1,4 +1,8 @@
-# Python Rest API Client (v0.0.5)
+# Python Rest API Client
+
+![pypi](https://img.shields.io/pypi/v/py-rest-api-client)
+
+-----
 
 Glues pydantic and httpx to provide a simple REST API client, with dynamic generated methods.
 It supports both synchronous and asynchronous formats.
@@ -7,6 +11,9 @@ Roadmap:
 - Adds Authentication support
 - Auto generate models from OpenAPI (3) Spec
 - Export generated source code
+
+---
+
 
 ### Usage
 
@@ -63,7 +70,7 @@ with httpx.Client() as client:
     joke = api.call_endpoint("get_joke")
     joke2 = api.get_joke()
 
-    categories = api.get_categoires()
+    categories = api.get_categories()
 
     search = api.get_search(query="something")
 
