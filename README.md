@@ -4,8 +4,8 @@ Ideally, it could be support both synchronous and asynchronous formats.
 
 Roadmap:
 
-- Adds Authentication support
 - Adds Async invokation support
+- Adds Authentication support
 - Export generated source code
 - Auto generate models from OpenAPI (3) Spec
 
@@ -121,4 +121,21 @@ Endpoint(
     name="patch_basket",  # No alias for patch exists
     path="/pantry/{pantry_id}/basket/{basket_id}",
 ),
+```
+
+
+#### Async methods
+By default, async methods are created with the prefix `_async`.
+For instance:
+
+```python3
+await api.async_get_pantry(pantry_id="123")
+await api.async_create_basket(
+    pantry_id="123", basket_id="234", data={"key": "value"}
+)
+await api.async_update_basket(
+    pantry_id="123", basket_id="234", data={"key2": "value2"}
+)
+await api.async_get_basket(pantry_id="123", basket_id="234")
+await api.async_delete_basket(pantry_id="123", basket_id="234")
 ```

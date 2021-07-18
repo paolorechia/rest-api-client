@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
+from unittest import IsolatedAsyncioTestCase
 from pydantic import BaseModel, HttpUrl
 from rest_api_client.lib import RestAPI, Endpoint, HTTPMethod, MissingMethodName
 import httpx
@@ -98,7 +99,7 @@ def test_get_rest_api():
     api.get_search(query="something")
 
 
-def test_pantry_api():
+def make_pantry_api():
     client = MagicMock()
     api = RestAPI(
         api_url="https://getpantry.cloud/apiv1",
@@ -127,11 +128,30 @@ def test_pantry_api():
             ),
         ],
     )
+    return api
+
+
+def test_pantry_api():
+    api = make_pantry_api()
     api.get_pantry(pantry_id="123")
     api.create_basket(pantry_id="123", basket_id="234", data={"key": "value"})
     api.update_basket(pantry_id="123", basket_id="234", data={"key2": "value2"})
     api.get_basket(pantry_id="123", basket_id="234")
     api.delete_basket(pantry_id="123", basket_id="234")
+
+
+class TestAsyncMethods(IsolatedAsyncioTestCase):
+    async def test_async(self):
+        api = make_pantry_api()
+        await api.async_get_pantry(pantry_id="123")
+        await api.async_create_basket(
+            pantry_id="123", basket_id="234", data={"key": "value"}
+        )
+        await api.async_update_basket(
+            pantry_id="123", basket_id="234", data={"key2": "value2"}
+        )
+        await api.async_get_basket(pantry_id="123", basket_id="234")
+        await api.async_delete_basket(pantry_id="123", basket_id="234")
 
 
 def test_pantry_api_with_aliases():
