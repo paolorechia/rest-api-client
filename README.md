@@ -1,13 +1,12 @@
-# Python Rest API Client (v0.0.4)
-Work in progress. Aims at glueing pydantic and httpx with a simple REST API client, with dynamic generated methods.
-Ideally, it could be support both synchronous and asynchronous formats.
+# Python Rest API Client (v0.0.5)
+
+Glues pydantic and httpx to provide a simple REST API client, with dynamic generated methods.
+It supports both synchronous and asynchronous formats.
 
 Roadmap:
-
-- Adds Async invokation support
 - Adds Authentication support
-- Export generated source code
 - Auto generate models from OpenAPI (3) Spec
+- Export generated source code
 
 ### Usage
 
