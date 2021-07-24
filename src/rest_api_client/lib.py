@@ -251,7 +251,7 @@ class BearerHeaderToken(httpx.Auth, httpx_auth.authentication.SupportMultiAuth):
 
     def __init__(self, bearer_token: str):
         """
-        :param api_key: The API key that will be sent.
+        :param bearer_token: The bearer token that will be sent.
         """
         self.bearer_token = bearer_token
         if not bearer_token:
