@@ -9,9 +9,9 @@ Glues pydantic and httpx to provide a simple REST API client, with dynamic gener
 It supports both synchronous and asynchronous formats.
 
 Roadmap:
-- Adds Authentication support
 - Auto generate models from OpenAPI (3) Spec
 - Export generated source code
+- Third-Party Cloud Secret Manager Support
 
 ---
 
@@ -23,69 +23,29 @@ pip install py_rest_api_client
 
 ### Usage
 
+Here's a set of examples you can use to understand how to use the library.
+They all correspond to test cases under `test/integration/`.
+
+Please note that authentication in general is provided by `httpx_auth`,
+with the exception of a simple Bearer token.
+
+#### Notion - Bearer Token Auth
 ```python
+auth = BearerHeaderToken(bearer_token=notion_token)
+client = httpx.Client(auth=self.auth)
+api = RestAPI(
+    api_url="https://api.notion.com/v1",
+    driver=client,
+    endpoints=[
+        Endpoint(name="search", path="/search", method=HTTPMethod.POST),
+    ],
+    custom_headers={"Notion-Version": "2021-05-13"},
+)
+api.search(data={"query": "Test page"})
 
-CHUCK_BASE_URL = "https://api.chucknorris.io/jokes"
-
-# Imports
-from pydantic import BaseModel, HttpUrl
-from rest_api_client.lib import RestAPI, Endpoint, HTTPMethod
-import httpx
-
-# Optionally declare your model classes
-class JokeModel(BaseModel):
-    id: str
-    created_at: str
-    updated_at: str
-    icon_url: str
-    categories: list
-    url: str
-    value: str
-
-
-# Declare your API endpoints
-
-endpoints = [
-
-    # Fully descriptive declaration.
-    Endpoint(
-        name="get_joke",
-        path="/random",
-        method=HTTPMethod.GET,
-        model=JokeModel,
-        query_parameters=[("category", str)],
-    ),
-
-    # No model provided, result comes back as a dictionary.
-    Endpoint(
-        name="get_categories",
-        path="/categories",
-        method=HTTPMethod.GET,
-    ),
-    
-    # Omit HTTP Method, it gets inferred from the endpoint name.
-    Endpoint(name="get_search", path="/search", query_parameters=[("query", str)]),
-]
-
-# Instantiate your HTTP client session. Should also work with requests
-
-with httpx.Client() as client:
-    api = RestAPI(api_url=CHUCK_BASE_URL, driver=client)
-    api.register_endpoints(endpoints)
-
-    joke = api.call_endpoint("get_joke")
-    joke2 = api.get_joke()
-
-    categories = api.get_categories()
-
-    search = api.get_search(query="something")
-
-    print(joke)
-    print(joke2)
-    print(search)
 ```
 
-Another example for pastry (see integration tests).
+#### Pantry
 ```python
 
 api = RestAPI(
@@ -151,3 +111,69 @@ await api.async_update_basket(
 await api.async_get_basket(pantry_id="123", basket_id="234")
 await api.async_delete_basket(pantry_id="123", basket_id="234")
 ```
+
+
+
+#### Chuck Norris
+```python
+
+CHUCK_BASE_URL = "https://api.chucknorris.io/jokes"
+
+# Imports
+from pydantic import BaseModel, HttpUrl
+from rest_api_client.lib import RestAPI, Endpoint, HTTPMethod
+import httpx
+
+# Optionally declare your model classes
+class JokeModel(BaseModel):
+    id: str
+    created_at: str
+    updated_at: str
+    icon_url: str
+    categories: list
+    url: str
+    value: str
+
+
+# Declare your API endpoints
+
+endpoints = [
+
+    # Fully descriptive declaration.
+    Endpoint(
+        name="get_joke",
+        path="/random",
+        method=HTTPMethod.GET,
+        model=JokeModel,
+        query_parameters=[("category", str)],
+    ),
+
+    # No model provided, result comes back as a dictionary.
+    Endpoint(
+        name="get_categories",
+        path="/categories",
+        method=HTTPMethod.GET,
+    ),
+    
+    # Omit HTTP Method, it gets inferred from the endpoint name.
+    Endpoint(name="get_search", path="/search", query_parameters=[("query", str)]),
+]
+
+# Instantiate your HTTP client session. Should also work with requests
+
+with httpx.Client() as client:
+    api = RestAPI(api_url=CHUCK_BASE_URL, driver=client)
+    api.register_endpoints(endpoints)
+
+    joke = api.call_endpoint("get_joke")
+    joke2 = api.get_joke()
+
+    categories = api.get_categories()
+
+    search = api.get_search(query="something")
+
+    print(joke)
+    print(joke2)
+    print(search)
+```
+
