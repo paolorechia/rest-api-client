@@ -15,6 +15,11 @@ Roadmap:
 
 ---
 
+### Installation
+
+```bash
+pip install py_rest_api_client
+```
 
 ### Usage
 
