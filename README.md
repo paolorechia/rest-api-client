@@ -12,6 +12,7 @@ Roadmap:
 - Adds Authentication support
 - Auto generate models from OpenAPI (3) Spec
 - Export generated source code
+- Third-Party Cloud Secret Manager Support
 
 ---
 

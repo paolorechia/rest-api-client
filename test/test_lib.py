@@ -2,7 +2,13 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 from unittest import IsolatedAsyncioTestCase
 from pydantic import BaseModel, HttpUrl
-from src.rest_api_client.lib import RestAPI, Endpoint, HTTPMethod, MissingMethodName
+from src.rest_api_client.lib import (
+    RestAPI,
+    Endpoint,
+    HTTPMethod,
+    MissingMethodName,
+    BearerHeaderToken,
+)
 import httpx
 
 CHUCK_BASE_URL = "https://api.chucknorris.io/jokes"
@@ -215,6 +221,20 @@ def test_get_path_parameter():
 
     assert params[0] == "pantry_id"
     assert params[1] == "basket_id"
+
+
+def test_notion_bearer():
+    auth = BearerHeaderToken(bearer_token="ABC")
+    client = MagicMock(auth=auth)
+    api = RestAPI(
+        api_url="https://api.notion.com/v1",
+        driver=client,
+        endpoints=[
+            Endpoint(name="search", path="/search", method=HTTPMethod.POST),
+        ],
+        custom_headers={"Notion-Version": "2021-05-13"},
+    )
+    assert api.search(data={"query": "test"})
 
 
 def test_missing_method_name():

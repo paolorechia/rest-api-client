@@ -1,11 +1,12 @@
 import logging
 import re
 from dataclasses import dataclass
-from typing import Iterable, Dict, Optional, List, Callable
+from typing import Iterable, Dict, Optional, List, Callable, Generator
 from makefun import create_function
 from pydantic import BaseModel, HttpUrl
 from enum import Enum
 import httpx
+import httpx_auth  # type: ignore
 
 
 logger = logging.getLogger("LIB_LOGGER")
@@ -81,12 +82,14 @@ class RestAPI:
         api_url: str,
         driver: HttpDriver,
         endpoints: Optional[Iterable[Endpoint]] = None,
+        custom_headers: Optional[Dict[str, str]] = None,
     ):
         self.api_url = Url(full_string=api_url)
         self.driver = driver
         self._headers = {
             "Accept": JSON_MIMETYPE,
         }
+        self._custom_headers = custom_headers
         self.endpoints: Dict[str, Endpoint] = {}
         if endpoints:
             self.register_endpoints(endpoints)
@@ -154,10 +157,14 @@ class RestAPI:
         url = f"{str(self.api_url.full_string)}{endpoint.path}"
         driver_kwargs = {}
         headers = self._headers.copy()
+
+        if self._custom_headers:
+            headers.update(self._custom_headers)
         if data:
             driver_kwargs["json"] = data
             headers["Content-Type"] = JSON_MIMETYPE
 
+        driver_kwargs["headers"] = headers
         if endpoint.query_parameters:
             parameters = []
             for key, item in kwargs.items():
@@ -187,6 +194,7 @@ class RestAPI:
         return self._process_endpoint_response(call, response)
 
     def _process_endpoint_response(self, call: PreparedCall, response):
+        logger.debug(response.content)
         response.raise_for_status()
         try:
             json_response = response.json()
@@ -236,3 +244,22 @@ class RestAPI:
         for param in params:
             _query_parameters.append(re.sub("{|}", "", str(param)))
         return _query_parameters
+
+
+class BearerHeaderToken(httpx.Auth, httpx_auth.authentication.SupportMultiAuth):
+    """Describes a bearer token used in the header requests authentication."""
+
+    def __init__(self, bearer_token: str):
+        """
+        :param api_key: The API key that will be sent.
+        """
+        self.bearer_token = bearer_token
+        if not bearer_token:
+            raise Exception("Bearer token is mandatory.")
+        self.header_name = "Authorization"
+
+    def auth_flow(
+        self, request: httpx.Request
+    ) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers[self.header_name] = f"Bearer {self.bearer_token}"
+        yield request
