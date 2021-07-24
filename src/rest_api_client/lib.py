@@ -164,7 +164,7 @@ class RestAPI:
             driver_kwargs["json"] = data
             headers["Content-Type"] = JSON_MIMETYPE
 
-        driver_kwargs["headers"] = headers
+        driver_kwargs["headers"] = headers  # type: ignore
         if endpoint.query_parameters:
             parameters = []
             for key, item in kwargs.items():
