@@ -10,8 +10,8 @@ It supports both synchronous and asynchronous formats.
 
 Roadmap:
 - Auto generate models from OpenAPI (3) Spec
+- Import Postman Collection
 - Export generated source code
-- Third-Party Cloud Secret Manager Support
 
 ---
 
