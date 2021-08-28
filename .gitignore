@@ -6,3 +6,4 @@ dist
 .coverage
 rest-api
 pip-wheel-metadata
+*.swp

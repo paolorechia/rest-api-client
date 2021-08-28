@@ -1,0 +1,13 @@
+name: 'Wait'
+description: 'Wait a designated number of milliseconds'
+inputs:
+  tox_env:  # id of input
+    description: 'number of milliseconds to wait'
+    required: true
+    default: ''
+outputs:
+  success_flag: # output will be available to future steps
+    description: 'Whether tox succeeded'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
