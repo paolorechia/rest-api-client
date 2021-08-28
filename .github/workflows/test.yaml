@@ -1,0 +1,24 @@
+name: Python package
+
+on: [pull_request]
+
+jobs:
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: tox test
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install tox
+        run: pip install tox
+      - name: Tox Action Step
+        id: tox
+        uses: ./actions/test-action/
+        with:
+          tox_env: 'py38-gh-unit'
+      - name: Get the output success flag
+        run: |
+          echo "Tests have passed: ${{ steps.tox.outputs.success_flag }}"
