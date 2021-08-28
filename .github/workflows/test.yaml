@@ -12,8 +12,6 @@ jobs:
           python-version: '3.8'
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Install tox
-        run: pip install tox
       - name: Tox Action Step
         id: tox
         uses: ./actions/test-action/
